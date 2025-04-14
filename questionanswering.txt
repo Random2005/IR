@@ -1,0 +1,80 @@
+import nltk
+import spacy
+import re
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+from nltk.tokenize import sent_tokenize
+
+# Download necessary NLTK package
+nltk.download('punkt')
+
+# Load spaCy model for named entity recognition
+nlp = spacy.load("en_core_web_sm")
+
+def preprocess_text(text):
+    """Tokenize text into sentences."""
+    return sent_tokenize(text)
+
+def extract_relevant_sentences(text, question, top_n=3):
+    """Find relevant sentences using TF-IDF similarity."""
+    sentences = preprocess_text(text)
+    if not sentences:
+        return []
+    
+    # Transform question and sentences into TF-IDF matrix
+    vectorizer = TfidfVectorizer(stop_words='english')
+    tfidf_matrix = vectorizer.fit_transform([question] + sentences)
+    
+    # Compute cosine similarities
+    cosine_similarities = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:]).flatten()
+    relevant_sentences_idx = cosine_similarities.argsort()[-top_n:][::-1]  # Select top-ranked sentences
+    
+    return [sentences[i] for i in relevant_sentences_idx]
+
+def extract_entities(text):
+    """Extract named entities from text."""
+    doc = nlp(text)
+    return [(ent.text, ent.label_) for ent in doc.ents]
+
+def extract_answer_from_sentence(sentence, question):
+    """Extract answer based on entity recognition and heuristics."""
+    if "who" in question.lower():
+        entities = extract_entities(sentence)
+        for entity, label in entities:
+            if label == "PERSON":
+                return entity
+    elif "what" in question.lower():
+        words = re.findall(r'\b\w+\b', sentence)
+        return " ".join(words[:5])  # Return first few words as an approximation
+    return None
+
+def answer_question(text, question, top_n=3):
+    """Find the best answer from the text based on the given question."""
+    relevant_sentences = extract_relevant_sentences(text, question, top_n)
+    
+    for sentence in relevant_sentences:
+        answer = extract_answer_from_sentence(sentence, question)
+        if answer:
+            return answer
+    
+    return "Sorry, I couldn't find an answer."
+
+# Input text
+text = """
+Albert Einstein was born in Ulm, Germany, in 1879. He was a theoretical physicist who developed the theory of relativity.
+Einstein is also known for his famous equation, E = mc^2. He won the Nobel Prize in Physics in 1921 for his discovery of the photoelectric effect.
+Einstein passed away in 1955 at the age of 76 in Princeton, New Jersey.
+"""
+
+# Questions to be answered
+questions = [
+    "Who was Albert Einstein?",
+    "What is E = mc^2?",
+    "When did Einstein pass away?"
+]
+
+# Generate answers for each question
+for question in questions:
+    print(f"Question: {question}")
+    print(f"Answer: {answer_question(text, question)}")
+    print("-" * 40)

@@ -1,0 +1,11 @@
+import networkx as nx 
+ 
+G = nx.DiGraph() 
+ 
+G.add_edges_from([('A', 'B'), ('A', 'C'), ('B', 'C'), ('C', 'A'), ('C', 'B')]) 
+ 
+pagerank_scores = nx.pagerank(G, alpha=0.85)  
+ 
+for node, score in pagerank_scores.items(): 
+    print(f"Node {node} has a PageRank score of {score:.4f}") 
+ 

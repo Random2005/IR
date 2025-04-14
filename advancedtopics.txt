@@ -1,0 +1,43 @@
+import nltk
+from sklearn.feature_extraction.text import TfidfVectorizer
+from nltk.tokenize import sent_tokenize
+import heapq
+
+# Download necessary NLTK package
+nltk.download('punkt')
+
+def summarize_text(text, summary_length=3):
+    """Summarize the given text using TF-IDF ranking."""
+    sentences = sent_tokenize(text)
+    
+    # Transform sentences into TF-IDF matrix
+    vectorizer = TfidfVectorizer(stop_words='english')
+    tfidf_matrix = vectorizer.fit_transform(sentences)
+
+    # Compute sentence scores
+    sentence_scores = {i: tfidf_matrix[i].sum() for i in range(len(sentences))}
+    
+    # Select top-ranked sentences for summary
+    ranked_sentences = heapq.nlargest(summary_length, sentence_scores, key=sentence_scores.get)
+    ranked_sentences = sorted(ranked_sentences)
+
+    # Create summary
+    summary = [sentences[i] for i in ranked_sentences]
+    return ' '.join(summary)
+
+# Input text
+text = """
+Natural language processing (NLP) is a subfield of linguistics, computer science, and artificial intelligence 
+concerned with the interactions between computers and human (natural) languages, and, in particular, 
+concerned with programming computers to fruitfully process large natural language data. 
+Challenges in natural language processing frequently involve natural language understanding, 
+natural language generation (frequently from formal, machine-readable logical forms), 
+connecting language and machine perception, managing or analyzing large amounts of unstructured data 
+(such as 'big data'), and often statistical machine learning.
+"""
+
+# Generate summary
+summary = summarize_text(text)
+
+# Print summary
+print("Summary:\n", summary)

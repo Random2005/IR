@@ -1,0 +1,42 @@
+import numpy as np
+
+def create_adjacency_matrix(links, num_pages):
+    """Create a transition matrix based on link structure."""
+    adjacency_matrix = np.zeros((num_pages, num_pages))
+    
+    for i, outgoing_links in links.items():
+        if outgoing_links:
+            adjacency_matrix[i, outgoing_links] = 1 / len(outgoing_links)
+    
+    return adjacency_matrix
+
+def pagerank(links, alpha=0.85, tol=1.0e-6, max_iter=100):
+    """Compute PageRank scores using the power iteration method."""
+    num_pages = len(links)
+    adjacency_matrix = create_adjacency_matrix(links, num_pages)
+    
+    ranks = np.ones(num_pages) / num_pages
+    teleport = np.ones(num_pages) / num_pages
+    
+    for iteration in range(max_iter):
+        new_ranks = alpha * adjacency_matrix.T @ ranks + (1 - alpha) * teleport
+        
+        if np.linalg.norm(new_ranks - ranks, ord=1) < tol:
+            break
+        
+        ranks = new_ranks
+    
+    return ranks
+
+web_graph = {
+    0: [1, 2],
+    1: [2],
+    2: [0],
+    3: [2]
+}
+
+page_ranks = pagerank(web_graph)
+
+print("PageRank Scores:")
+for i, rank in enumerate(page_ranks):
+    print(f"Page {i}: {rank:.4f}")

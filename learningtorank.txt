@@ -1,0 +1,50 @@
+import numpy as np
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
+queries = [  
+    "best programming languages",  
+    "machine learning tutorials",  
+    "artificial intelligence books" 
+] 
+documents = [  
+    "Python is a versatile language used for machine learning and web development.",  
+    "This guide teaches machine learning using scikit-learn and TensorFlow.",  
+    "AI books are essential for learning deep learning techniques and neural networks.",  
+    "Java is widely used for enterprise applications and Android development.",  
+    "Books on AI cover topics from basic to advanced deep learning algorithms."  
+] 
+relevance_scores = [  
+    [3, 5, 2, 1, 4],    
+    [4, 5, 3, 2, 1],
+    [5, 4, 3, 1, 2]     
+] 
+vectorizer = TfidfVectorizer(stop_words='english') 
+X_documents = vectorizer.fit_transform(documents)
+X_query_doc = [] 
+y = [] 
+ 
+for query_idx, query in enumerate(queries): 
+    query_vector = vectorizer.transform([query]).toarray()[0]   
+     
+    for doc_idx in range(len(documents)): 
+        doc_vector = X_documents[doc_idx].toarray()[0]  
+ 
+        combined_features = np.concatenate([query_vector, doc_vector]) 
+        X_query_doc.append(combined_features) 
+         
+        y.append(relevance_scores[query_idx][doc_idx]) 
+ 
+X_query_doc = np.array(X_query_doc) 
+y = np.array(y) 
+ 
+X_train, X_test, y_train, y_test = train_test_split(X_query_doc, y, test_size=0.2, random_state=42) 
+ 
+model = LinearRegression()
+model.fit(X_train, y_train) 
+ 
+y_pred = model.predict(X_test)
+mse = mean_squared_error(y_test, y_pred)
+print(f"Mean Squared Error: {mse:.4f}")
+print("Predicted Relevance Scores:", y_pred) 
